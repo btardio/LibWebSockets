@@ -1,0 +1,177 @@
+/*
+ * 
+ * 
+ * 
+ */
+
+#if defined(_WIN32) && defined(EXTERNAL_POLL)
+#define WINVER 0x0600
+#define _WIN32_WINNT 0x0600
+#define poll(fdArray, fds, timeout)  WSAPoll((LPWSAPOLLFD)(fdArray), (ULONG)(fds), (INT)(timeout))
+#endif
+
+//#include "lws_config.h"
+
+#include <hiredis.h>
+#include <async.h>
+#include <adapters/libev.h>
+#include <ev.h>
+
+#include <glib.h>
+
+#include <time.h>
+
+#include <json-glib-1.0/json-glib/json-glib.h>
+#include <json-glib-1.0/json-glib/json-gobject.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <assert.h>
+
+#include <libwebsockets.h>
+#include "/usr/include/libwebsockets.h"
+
+#ifdef _WIN32
+#include <io.h>
+#include "gettimeofday.h"
+#else
+#include <syslog.h>
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
+extern int close_testing;
+extern int max_poll_elements;
+
+#ifdef EXTERNAL_POLL
+extern struct lws_pollfd *pollfds;
+extern int *fd_lookup;
+extern int count_pollfds;
+#endif
+extern volatile int force_exit;
+extern struct lws_context *context;
+extern char *resource_path;
+#if defined(LWS_OPENSSL_SUPPORT) && defined(LWS_HAVE_SSL_CTX_set1_param)
+extern char crl_path[1024];
+#endif
+
+
+
+
+redisAsyncContext *redis_async_context;
+
+
+
+extern void test_server_lock(int care);
+extern void test_server_unlock(int care);
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+
+/*
+struct per_session_data__http {
+        lws_filefd_type fd;
+#ifdef LWS_WITH_CGI
+        struct lws_cgi_args args;
+#endif
+#if defined(LWS_WITH_CGI) || !defined(LWS_NO_CLIENT)
+        int reason_bf;
+#endif
+        unsigned int client_finished:1;
+
+
+        struct lws_spa *spa;
+        char result[500 + LWS_PRE];
+        int result_len;
+
+        char filename[256];
+        long file_length;
+        lws_filefd_type post_fd;
+};*/
+
+/*
+ * one of these is auto-created for each connection and a pointer to the
+ * appropriate instance is passed to the callback in the user parameter
+ *
+ * for this example protocol we use it to individualize the count for each
+ * connection.
+ */
+
+struct per_session_data__acrylic_process {
+//TODO: should there be a mutex around ghashtable and gqueue?
+        int number;
+        redisAsyncContext *c;
+        GHashTable *ghasht_sent_entries;
+        GQueue* gqueue_entries;
+        int queue_lock;
+        int hash_lock;
+};
+
+// struct per_session_data__lws_mirror {
+//         struct lws *wsi;
+//         int ringbuffer_tail;
+// };
+// 
+// struct per_session_data__echogen {
+//         size_t total;
+//         size_t total_rx;
+//         int fd;
+//         int fragsize;
+//         int wr;
+// };
+// 
+// struct per_session_data__lws_status {
+//         struct per_session_data__lws_status *list;
+//         struct timeval tv_established;
+//         int last;
+//         char ip[270];
+//         char user_agent[512];
+//         const char *pos;
+//         int len;
+// };
+
+
+struct hmgetstruct {
+  unsigned long long int id;
+  unsigned long long int entrytime;
+  char job_id[256];
+  char job_entry_date[128];
+  char job_description[65535];
+  char job_status[3];
+};
+
+
+struct callback_data {
+  struct lws *wsi;
+  struct per_session_data__acrylic_process *pss;
+};
+
+/*
+extern int
+callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
+              void *in, size_t len);*/
+
+// extern int
+// callback_lws_mirror(struct lws *wsi, enum lws_callback_reasons reason,
+//                     void *user, void *in, size_t len);
+
+extern int
+callback_acrylic_process(struct lws *wsi, enum lws_callback_reasons reason,
+                        void *user, void *in, size_t len);
+// extern int
+// callback_lws_echogen(struct lws *wsi, enum lws_callback_reasons reason,
+//                         void *user, void *in, size_t len);
+// extern int
+// callback_lws_status(struct lws *wsi, enum lws_callback_reasons reason,
+//                     void *user, void *in, size_t len);
+
+
+//extern void
+//dump_handshake_info(struct lws *wsi);
